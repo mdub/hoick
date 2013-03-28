@@ -1,0 +1,8 @@
+#! /usr/bin/env ruby
+
+require "rubygems"
+
+$: << File.expand_path("../../lib", __FILE__)
+require "hoick/command"
+
+Hoick::Command.run
