@@ -12,7 +12,7 @@ module Hoick
 
     subcommand ["get", "GET"], "HTTP GET" do
 
-      option ["-f", "--follow"], :flag, "follow redirects"
+      option ["--follow"], :flag, "follow redirects"
 
       parameter "URL", "address"
 
