@@ -36,13 +36,30 @@ module Hoick
 
     end
 
+    module PayloadOptions
+
+      extend Clamp::Option::Declaration
+
+      option ["-F", "--file"], "FILE", "input file"
+
+      def payload
+        if file
+          File.read(file)
+        else
+          $stdin.read
+        end
+      end
+
+    end
+
     subcommand ["put", "PUT"], "HTTP PUT" do
 
+      include PayloadOptions
+
       parameter "URL", "address"
-      parameter "[FILE]", "file to upload"
 
       def execute
-        content = read_content
+        content = payload
         with_connection_to(url) do |http, uri|
           put = Net::HTTP::Put.new(uri.request_uri)
           put.body = content
@@ -50,14 +67,6 @@ module Hoick
           http.request(put) do |response|
             display_response(response)
           end
-        end
-      end
-
-      def read_content
-        if file
-          File.read(file)
-        else
-          $stdin.read
         end
       end
 
