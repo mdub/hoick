@@ -52,6 +52,26 @@ module Hoick
 
     end
 
+    subcommand ["post", "POST"], "HTTP POST" do
+
+      include PayloadOptions
+
+      parameter "URL", "address"
+
+      def execute
+        content = payload
+        with_connection_to(url) do |http, uri|
+          post = Net::HTTP::Post.new(uri.request_uri)
+          post.body = content
+          post["Content-Type"] = "application/octet-stream"
+          http.request(post) do |response|
+            display_response(response)
+          end
+        end
+      end
+
+    end
+
     subcommand ["put", "PUT"], "HTTP PUT" do
 
       include PayloadOptions
