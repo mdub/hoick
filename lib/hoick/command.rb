@@ -41,6 +41,7 @@ module Hoick
       extend Clamp::Option::Declaration
 
       option ["-F", "--file"], "FILE", "input file"
+      option ["-T", "--content-type"], "TYPE", "payload Content-Type", :default => "application/octet-stream"
 
       def payload
         if file
@@ -62,8 +63,8 @@ module Hoick
         content = payload
         with_connection_to(url) do |http, uri|
           post = Net::HTTP::Post.new(uri.request_uri)
+          post["Content-Type"] = content_type
           post.body = content
-          post["Content-Type"] = "application/octet-stream"
           http.request(post) do |response|
             display_response(response)
           end
@@ -82,8 +83,8 @@ module Hoick
         content = payload
         with_connection_to(url) do |http, uri|
           put = Net::HTTP::Put.new(uri.request_uri)
+          put["Content-Type"] = content_type
           put.body = content
-          put["Content-Type"] = "application/octet-stream"
           http.request(put) do |response|
             display_response(response)
           end
