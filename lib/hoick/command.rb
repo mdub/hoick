@@ -6,6 +6,8 @@ module Hoick
 
   class Command < Clamp::Command
 
+    option ["--base-url"], "URL", "base URL"
+
     option ["-b", "--[no-]body"], :flag, "display response body", :default => true
     option ["-h", "--[no-]headers"], :flag, "display response status and headers"
 
@@ -18,13 +20,13 @@ module Hoick
       parameter "URL", "address"
 
       def execute
-        get_with_redirects(url) do |response|
+        get_with_redirects do |response|
           display_response(response)
         end
       end
 
-      def get_with_redirects(url, &callback)
-        with_connection_to(url) do |http, uri|
+      def get_with_redirects(&callback)
+        with_http_connection do |http, uri|
           http.request_get(uri.request_uri) do |response|
             if follow? && response.kind_of?(Net::HTTPRedirection)
               get_with_redirects(response['location'], &callback)
@@ -79,7 +81,7 @@ module Hoick
 
       def execute
         content = payload
-        with_connection_to(url) do |http, uri|
+        with_http_connection do |http, uri|
           post = Net::HTTP::Post.new(uri.request_uri)
           post["Content-Type"] = content_type
           post.body = content
@@ -99,7 +101,7 @@ module Hoick
 
       def execute
         content = payload
-        with_connection_to(url) do |http, uri|
+        with_http_connection do |http, uri|
           put = Net::HTTP::Put.new(uri.request_uri)
           put["Content-Type"] = content_type
           put.body = content
@@ -113,8 +115,11 @@ module Hoick
 
     private
 
-    def with_connection_to(url)
-      uri = URI(url)
+    def uri
+      URI(base_url) + URI(url)
+    end
+
+    def with_http_connection
       http = Net::HTTP.new(uri.host, uri.port)
       http.set_debug_output($stderr) if debug?
       http.start do
