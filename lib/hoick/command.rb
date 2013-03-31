@@ -1,4 +1,5 @@
 require "clamp"
+require "mime/types"
 require "net/http"
 
 module Hoick
@@ -41,7 +42,9 @@ module Hoick
       extend Clamp::Option::Declaration
 
       option ["-F", "--file"], "FILE", "input file"
-      option ["-T", "--content-type"], "TYPE", "payload Content-Type", :default => "application/octet-stream"
+      option ["-T", "--content-type"], "TYPE", "payload Content-Type", :default => "binary" do |arg|
+        mime_type_of(arg) || arg
+      end
 
       def payload
         if file
@@ -49,6 +52,17 @@ module Hoick
         else
           $stdin.read
         end
+      end
+
+      protected
+
+      def default_content_type
+        (mime_type_of(file) if file) ||  "application/octet-stream"
+      end
+
+      def mime_type_of(filename_or_ext)
+        resolved_type = MIME::Types.of(filename_or_ext).first
+        resolved_type.to_s if resolved_type
       end
 
     end
