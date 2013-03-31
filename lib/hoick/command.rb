@@ -42,8 +42,12 @@ module Hoick
       extend Clamp::Option::Declaration
 
       option ["-F", "--file"], "FILE", "input file"
-      option ["-T", "--content-type"], "TYPE", "payload Content-Type", :default => "binary" do |arg|
-        mime_type_of(arg) || arg
+      option ["-T", "--content-type"], "TYPE", "payload Content-Type" do |arg|
+        if arg.index("/")
+          arg
+        else
+          mime_type_of(arg) || raise(ArgumentError, "unrecognised type: #{arg.inspect}")
+        end
       end
 
       def payload
