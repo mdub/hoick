@@ -6,7 +6,25 @@ module Hoick
 
   class Command < Clamp::Command
 
-    option ["--base-url"], "URL", "base URL"
+    class << self
+
+      private
+
+      def parse_url(url)
+        URI(url)
+      rescue ArgumentError => e
+        raise e
+      rescue URI::InvalidURIError => e
+        raise ArgumentError, e.message
+      end
+
+      def declare_url_parameter
+        parameter "URL", "address", &method(:parse_url)
+      end
+
+    end
+
+    option ["--base-url"], "URL", "base URL", &method(:parse_url)
 
     option ["-b", "--[no-]body"], :flag, "display response body", :default => true
     option ["-h", "--[no-]headers"], :flag, "display response status and headers"
@@ -17,7 +35,7 @@ module Hoick
 
       option ["--follow"], :flag, "follow redirects"
 
-      parameter "URL", "address"
+      declare_url_parameter
 
       def execute
         get_with_redirects do |response|
@@ -77,7 +95,7 @@ module Hoick
 
       include PayloadOptions
 
-      parameter "URL", "address"
+      declare_url_parameter
 
       def execute
         content = payload
@@ -97,7 +115,7 @@ module Hoick
 
       include PayloadOptions
 
-      parameter "URL", "address"
+      declare_url_parameter
 
       def execute
         content = payload
@@ -116,7 +134,11 @@ module Hoick
     private
 
     def uri
-      URI(base_url) + URI(url)
+      if base_url
+        base_url + url
+      else
+        url
+      end
     end
 
     def with_http_connection
