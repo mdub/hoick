@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.version       = Hoick::VERSION
   spec.authors       = ["Mike Williams"]
   spec.email         = ["mdub@dogbiscuit.org"]
-  spec.description   = %q{A command-line HTTP client}
   spec.summary       = %q{A command-line HTTP client}
+  spec.description   = File.read("README.md").split("\n\n")[1]
   spec.homepage      = "https://github.com/mdub/hoick"
   spec.license       = "MIT"
 
