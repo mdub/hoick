@@ -98,12 +98,11 @@ module Hoick
       declare_url_parameter
 
       def execute
-        content = payload
+        request = Net::HTTP::Post.new(uri.request_uri)
+        request["Content-Type"] = content_type
+        request.body = payload
         with_http_connection do |http, uri|
-          post = Net::HTTP::Post.new(uri.request_uri)
-          post["Content-Type"] = content_type
-          post.body = content
-          http.request(post) do |response|
+          http.request(request) do |response|
             display_response(response)
           end
         end
@@ -118,11 +117,10 @@ module Hoick
       declare_url_parameter
 
       def execute
-        content = payload
+        put = Net::HTTP::Put.new(uri.request_uri)
+        put["Content-Type"] = content_type
+        put.body = payload
         with_http_connection do |http, uri|
-          put = Net::HTTP::Put.new(uri.request_uri)
-          put["Content-Type"] = content_type
-          put.body = content
           http.request(put) do |response|
             display_response(response)
           end
