@@ -143,6 +143,7 @@ module Hoick
 
     def with_http_connection
       http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = (uri.scheme == "https")
       http.set_debug_output($stderr) if debug?
       http.start do
         yield http, uri
