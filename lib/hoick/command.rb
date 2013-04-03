@@ -31,15 +31,6 @@ module Hoick
 
     option ["--debug"], :flag, "debug"
 
-    class Redirected < StandardError
-
-      def initialize(location)
-        @location = location
-        super("Redirected to #{location}")
-      end
-
-    end
-
     subcommand ["get", "GET"], "HTTP GET" do
 
       option ["--follow"], :flag, "follow redirects"
@@ -47,7 +38,12 @@ module Hoick
       declare_url_parameter
 
       def execute
-        uri = full_url
+        get(full_url, &method(:display_response))
+      end
+
+      private
+
+      def get(uri, &callback)
         request = Net::HTTP::Get.new(uri.request_uri)
         with_http_connection(uri) do |http|
           http.request(request) do |response|
@@ -57,10 +53,21 @@ module Hoick
               display_response(response)
             end
           end
-        # rescue Redirected => e
-        #   uri = e.location
-        #   retry
         end
+      rescue Redirected => e
+        uri = URI(e.location)
+        retry
+      end
+
+      class Redirected < StandardError
+
+        def initialize(location)
+          @location = location
+          super("Redirected to #{location}")
+        end
+
+        attr_reader :location
+
       end
 
     end
