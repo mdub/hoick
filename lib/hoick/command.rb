@@ -31,9 +31,13 @@ module Hoick
 
     option ["--debug"], :flag, "debug"
 
+    def follow_redirects?
+      false
+    end
+
     subcommand ["get", "GET"], "HTTP GET" do
 
-      option ["--follow"], :flag, "follow redirects"
+      option ["--follow"], :flag, "follow redirects", :attribute_name => :follow_redirects
 
       declare_url_parameter
 
@@ -44,15 +48,11 @@ module Hoick
       private
 
       def get(uri, &callback)
-        request = Net::HTTP::Get.new(uri.request_uri)
-        with_http_connection(uri) do |http|
-          http.request(request) do |response|
-            if follow? && response.kind_of?(Net::HTTPRedirection)
-              raise Redirected, response['location']
-            else
-              display_response(response)
-            end
+        http_request("GET", uri) do |response|
+          if follow_redirects? && response.kind_of?(Net::HTTPRedirection)
+            raise Redirected, response['location']
           end
+          callback.call(response)
         end
       rescue Redirected => e
         uri = URI(e.location)
@@ -113,15 +113,7 @@ module Hoick
       declare_url_parameter
 
       def execute
-        uri = full_url
-        request = Net::HTTP::Post.new(uri.request_uri)
-        request["Content-Type"] = content_type
-        request.body = payload
-        with_http_connection(uri) do |http|
-          http.request(request) do |response|
-            display_response(response)
-          end
-        end
+        http_request("POST", full_url, payload, content_type, &method(:display_response))
       end
 
     end
@@ -133,15 +125,7 @@ module Hoick
       declare_url_parameter
 
       def execute
-        uri = full_url
-        put = Net::HTTP::Put.new(uri.request_uri)
-        put["Content-Type"] = content_type
-        put.body = payload
-        with_http_connection(uri) do |http|
-          http.request(put) do |response|
-            display_response(response)
-          end
-        end
+        http_request("PUT", full_url, payload, content_type, &method(:display_response))
       end
 
     end
@@ -154,6 +138,31 @@ module Hoick
       else
         url
       end
+    end
+
+    def http_request(method, uri, content = nil, content_type = nil, &callback)
+      request = build_request(method, uri, content, content_type)
+      with_http_connection(uri) do |http|
+        http.request(request) do |response|
+          if follow_redirects? && response.kind_of?(Net::HTTPRedirection)
+            raise Redirected, response['location']
+          end
+          callback.call(response)
+        end
+      end
+    rescue Redirected => e
+      uri = URI(e.location)
+      retry
+    end
+
+    def build_request(method, uri, content, content_type)
+      request_class = Net::HTTP.const_get(method.to_s.capitalize)
+      request = request_class.new(uri.request_uri)
+      if content
+        request["Content-Type"] = content_type
+        request.body = content
+      end
+      request
     end
 
     def with_http_connection(uri)
