@@ -31,6 +31,15 @@ module Hoick
 
     option ["--debug"], :flag, "debug"
 
+    class Redirected < StandardError
+
+      def initialize(location)
+        @location = location
+        super("Redirected to #{location}")
+      end
+
+    end
+
     subcommand ["get", "GET"], "HTTP GET" do
 
       option ["--follow"], :flag, "follow redirects"
@@ -38,20 +47,19 @@ module Hoick
       declare_url_parameter
 
       def execute
-        get_with_redirects do |response|
-          display_response(response)
-        end
-      end
-
-      def get_with_redirects(&callback)
-        with_http_connection do |http, uri|
-          http.request_get(uri.request_uri) do |response|
+        uri = full_url
+        request = Net::HTTP::Get.new(uri.request_uri)
+        with_http_connection(uri) do |http|
+          http.request(request) do |response|
             if follow? && response.kind_of?(Net::HTTPRedirection)
-              get_with_redirects(response['location'], &callback)
+              raise Redirected, response['location']
             else
-              callback.call(response)
+              display_response(response)
             end
           end
+        # rescue Redirected => e
+        #   uri = e.location
+        #   retry
         end
       end
 
@@ -98,10 +106,11 @@ module Hoick
       declare_url_parameter
 
       def execute
+        uri = full_url
         request = Net::HTTP::Post.new(uri.request_uri)
         request["Content-Type"] = content_type
         request.body = payload
-        with_http_connection do |http, uri|
+        with_http_connection(uri) do |http|
           http.request(request) do |response|
             display_response(response)
           end
@@ -117,10 +126,11 @@ module Hoick
       declare_url_parameter
 
       def execute
+        uri = full_url
         put = Net::HTTP::Put.new(uri.request_uri)
         put["Content-Type"] = content_type
         put.body = payload
-        with_http_connection do |http, uri|
+        with_http_connection(uri) do |http|
           http.request(put) do |response|
             display_response(response)
           end
@@ -131,7 +141,7 @@ module Hoick
 
     private
 
-    def uri
+    def full_url
       if base_url
         base_url + url
       else
@@ -139,12 +149,12 @@ module Hoick
       end
     end
 
-    def with_http_connection
+    def with_http_connection(uri)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = (uri.scheme == "https")
       http.set_debug_output($stderr) if debug?
       http.start do
-        yield http, uri
+        yield http
       end
     end
 
