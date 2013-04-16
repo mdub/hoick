@@ -29,6 +29,10 @@ module Hoick
     option ["-b", "--[no-]body"], :flag, "display response body", :default => true
     option ["-h", "--[no-]headers"], :flag, "display response status and headers"
 
+    option ["--timeout"], "SECONDS", "HTTP connection timeout", :attribute_name => :open_timeout do |arg|
+      Float(arg)
+    end
+
     option ["--debug"], :flag, "debug"
 
     def follow_redirects?
@@ -169,9 +173,13 @@ module Hoick
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = (uri.scheme == "https")
       http.set_debug_output($stderr) if debug?
+      http.open_timeout = open_timeout
       http.start do
         yield http
       end
+    rescue Timeout::Error => e
+      $stderr.puts "ERROR: request timed out"
+      exit(1)
     end
 
     def display_response(response)
