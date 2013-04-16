@@ -29,9 +29,7 @@ module Hoick
     option ["-b", "--[no-]body"], :flag, "display response body", :default => true
     option ["-h", "--[no-]headers"], :flag, "display response status and headers"
 
-    option ["--timeout"], "SECONDS", "HTTP connection timeout", :attribute_name => :open_timeout do |arg|
-      Float(arg)
-    end
+    option ["--timeout"], "SECONDS", "HTTP connection/read timeout", &method(:Float)
 
     option ["--debug"], :flag, "debug"
 
@@ -157,6 +155,9 @@ module Hoick
     rescue Redirected => e
       uri = URI(e.location)
       retry
+    rescue SocketError, TimedOut => e
+      $stderr.puts "ERROR: #{e}"
+      exit(1)
     end
 
     def build_request(method, uri, content, content_type)
@@ -173,13 +174,19 @@ module Hoick
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = (uri.scheme == "https")
       http.set_debug_output($stderr) if debug?
-      http.open_timeout = open_timeout
-      http.start do
-        yield http
+      if timeout
+        http.open_timeout = timeout
+        http.read_timeout = timeout
       end
-    rescue Timeout::Error => e
-      $stderr.puts "ERROR: request timed out"
-      exit(1)
+      http.start do
+        begin
+          yield http
+        rescue Timeout::Error
+          raise TimedOut, "request timed out"
+        end
+      end
+    rescue Timeout::Error
+      raise TimedOut, "connection timed out"
     end
 
     def display_response(response)
@@ -199,6 +206,8 @@ module Hoick
         exit(response.code.to_i / 100)
       end
     end
+
+    class TimedOut < StandardError; end
 
   end
 
