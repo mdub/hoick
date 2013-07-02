@@ -74,6 +74,16 @@ module Hoick
 
     end
 
+    subcommand ["head", "HEAD"], "HTTP HEAD" do
+
+      declare_url_parameter
+
+      def execute
+        http_request("HEAD", full_url, nil, nil, &method(:display_response))
+      end
+
+    end
+
     module PayloadOptions
 
       extend Clamp::Option::Declaration
