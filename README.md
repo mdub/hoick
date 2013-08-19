@@ -12,11 +12,11 @@ Hoick is distributed as a Ruby gem, installable using:
 
 ## Usage
 
-Hoick has subcommands modelled on HTTP verbs.  
+Hoick has subcommands modelled on HTTP verbs.
 
 ### GET
 
-To fetch a resource, use GET.  The response body will be printed to STDOUT. 
+To fetch a resource, use GET.  The response body will be printed to STDOUT.
 
     $ hoick GET http://api.example.com/widgets/123
 
@@ -24,7 +24,7 @@ If you're interested in response headers too, add the "`-h`" flag.  Add the "`--
 
 ### PUT and POST
 
-The "PUT" subcommand uploads data to a specified URL.  
+The "PUT" subcommand uploads data to a specified URL.
 
     $ hoick PUT -T json http://api.example.com/widgets/123 < widget-123.json
 
@@ -35,6 +35,10 @@ By default, the payload is read from STDIN, but you can specify the "`-F`" optio
 Hoick guesses a "Content-Type" from the file-name.  If a type cannot be guessed, or if the payload is sourced from STDIN, binary data ("application/octet-stream") is assumed.  Either way, the default can be overridden with "`-T`" (which can be either a file extension, or a full MIME-type string).
 
 The "POST" subcommand works in a similar way.
+
+### HEAD and DELETE
+
+Rounding out the RESTful actions, "HEAD" and "DELETE" do pretty much what you'd expect.
 
 ## Contributing
 
