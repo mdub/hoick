@@ -84,6 +84,16 @@ module Hoick
 
     end
 
+    subcommand ["delete", "DELETE"], "HTTP DELETE" do
+
+      declare_url_parameter
+
+      def execute
+        http_request("DELETE", full_url, nil, nil, &method(:display_response))
+      end
+
+    end
+
     module PayloadOptions
 
       extend Clamp::Option::Declaration
