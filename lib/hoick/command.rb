@@ -192,7 +192,7 @@ module Hoick
 
     def with_http_connection(uri)
       http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = (uri.scheme == "https")
+      http.use_ssl = true if (uri.scheme == "https")
       http.set_debug_output($stderr) if debug?
       if timeout
         http.open_timeout = timeout
